@@ -58,6 +58,8 @@ class CalvanoAgent(object):
         self.model = MLP().to(device)
         self.lr = lr
         self.beta = beta
+        print("Model initialized")
+        print(self.model)
 
     def get_action(self, state):
         """Get action function based on the state.
