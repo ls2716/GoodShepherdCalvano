@@ -1,3 +1,5 @@
 Code/venv
 
 *.png
+Code/__pycache__
+*.pyc
