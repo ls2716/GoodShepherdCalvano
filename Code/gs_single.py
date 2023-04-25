@@ -18,7 +18,7 @@ if __name__=="__main__":
     # Define agents
     dummy_price = 1.5
     agent1 = CalvanoAgent(0.01, device, 0.995)
-    agent2 = DummyAgent(dummy_price)
+    agent2 = DummyAgent(dummy_price, device)
     env = CalvanoTorch(np.array([1., 1.]), 1, 1., np.array([0., 0.]), device)
 
     # Define learning hyperparameters

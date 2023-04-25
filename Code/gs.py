@@ -12,11 +12,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class DummyAgent(object):
 
-    def __init__(self, action) -> None:
+    def __init__(self, action, device) -> None:
         self.action = action
 
     def get_action(self, state):
-        return self.action*torch.ones(size=(state.shape[0], 1))
+        return self.action*torch.ones(size=(state.shape[0], 1), device=device)
 
     def update(self, *args):
         pass
