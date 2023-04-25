@@ -36,7 +36,7 @@ if __name__=="__main__":
 
     # Get sample history
     actions = torch.linspace(0, 5, 100, device=device).reshape(-1, 1)
-    prices = torch.hstack((actions, actions*0 + 1.5), device=device)
+    prices = torch.hstack((actions, actions*0 + 1.5))
     rewards = env.step(prices)
 
 
