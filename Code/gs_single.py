@@ -40,7 +40,7 @@ if __name__=="__main__":
     rewards = env.step(prices)
 
 
-    plt.plot(actions.cpu().detach().numpy().flatten(), rewards[:, 0].detach().numpy().flatten())
+    plt.plot(actions.detach().cpu().numpy().flatten(), rewards[:, 0].detach().cpu().numpy().flatten())
     plt.xlabel('actions')
     plt.ylabel('rewards')
     plt.title('rewards for each action')
@@ -51,7 +51,7 @@ if __name__=="__main__":
     # Get sample actions
     states = torch.hstack((actions, actions*0 + 1.5))
     agent_action = agent1.get_action(state=states).cpu()
-    plt.plot(actions.cpu().detach().numpy().flatten(), agent_action.detach().numpy().flatten())
+    plt.plot(actions.detach().cpu().numpy().flatten(), agent_action.detach().cpu().numpy().flatten())
     plt.xlabel('state (previous action)')
     plt.ylabel('action')
     plt.title(f'Next actions based on previous action \n and dummy action {dummy_price}')
