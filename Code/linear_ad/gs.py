@@ -29,14 +29,13 @@ class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
         self.mlp = nn.Sequential(
-            nn.Linear(2, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(2, 32),
             nn.Dropout(),
             nn.ReLU(),
-            nn.Linear(32, 32),
+            nn.Linear(32, 16),
+            nn.Dropout(),
             nn.ReLU(),
-            nn.Linear(32, 1)
+            nn.Linear(16, 1)
         )
 
     def forward(self, x):
@@ -53,13 +52,13 @@ class CalvanoAgent(object):
         - beta (float): discount factor for learning rate
     """
 
-    def __init__(self, lr, device, beta) -> None:
+    def __init__(self, lr, beta, device) -> None:
         self.device = device
         self.model = MLP().to(device)
         self.lr = lr
         self.beta = beta
-        print("Model initialized")
-        print(self.model)
+        # print("Model initialized")
+        # print(self.model)
 
     def get_action(self, state):
         """Get action function based on the state.
@@ -77,9 +76,15 @@ class CalvanoAgent(object):
 
     def update(self):
         """Perform gradient descent"""
-        torch.nn.utils.clip_grad.clip_grad_norm_(self.model.parameters(), 1.)
+        torch.nn.utils.clip_grad.clip_grad_norm_(self.model.parameters(), 3.)
         for p in self.model.parameters():
             p.data = p.data + self.lr * p.grad
+
+    def l2_loss(self, l2_lambda):
+        """Compute l2 loss of the weights"""
+        l2_norm = sum(p.pow(2.0).sum()
+                      for p in self.model.parameters())
+        return -l2_norm*l2_lambda
 
 
 class CalvanoTorch(object):
@@ -140,77 +145,19 @@ class CalvanoTorch(object):
 
 def MDP(agent1, agent2, env, batch_size, T, device):
     """Perform episode simulation to obtain the rewards"""
+    # Initialize running reward
     running_rewards = torch.zeros(size=(1, 2), device=device)
+    # Initialize state using normal distribution with mean 2 and variance 2
     state = torch.randn(size=(batch_size, 2),
                         requires_grad=False, device=device)*2+2
+    # Iterate over steps in episode
     for t in range(T):
+        # Get actions for the states
         action1 = agent1.get_action(state)
         action2 = agent2.get_action(state)
         actions = torch.hstack((action1, action2))
+        # Step actions and get rewards
         running_rewards += torch.mean(env.step(actions), dim=0, keepdim=True)
-        state = torch.zeros_like(actions, requires_grad=False)
-        state[:, :] = actions[:, :]
+        state = actions
 
     return running_rewards, actions[0, :]
-
-
-# # Define agents
-# agent1 = CalvanoAgent(0.01, device, 0.99)
-# agent2 = DummyAgent(1.5)
-# env = CalvanoTorch(np.array([1., 1.]), 1, 1., np.array([0., 0.]), device)
-
-# T = 20
-# batch_size = 20
-# learning_steps = 50
-
-# # Run learning
-# for i in range(learning_steps):
-#     agent1.zero_gradients()
-#     running_rewards, actions = MDP(agent1, agent2, env, batch_size, T, device)
-#     running_rewards[0, 0].backward(retain_graph=False)
-#     agent1.update()
-
-
-# actions = torch.linspace(0, 10, 100).reshape(-1, 1)
-# prices = torch.hstack((actions, actions*0 + 1.5))
-# rewards = env.step(prices)
-
-# # print(rewards)
-# plt.plot(actions, rewards[:, 0].flatten())
-# plt.show()
-
-
-# exit(0)
-# # We start with defining two agents
-# outer_agent = CalvanoAgent(0.0005, device)
-# # inner agent has to learn faster than the outer
-# # inner_agent = CalvanoAgent(0.01, device)
-
-# # We define parameters
-# T = 20
-# batch_size = 5
-# inner_learning_steps = 30
-# outer_learning_steps = 50
-
-# # Outer loop
-# for outer_it in range(outer_learning_steps):
-#     outer_running_reward = torch.Tensor([0])
-#     outer_agent.zero_gradients()
-#     # Inner loop
-#     inner_agent = CalvanoAgent(0.01, device)
-#     for inner_it in range(inner_learning_steps):
-#         inner_agent.zero_gradients()
-#         # Get rewards
-#         running_rewards, last_actions = MDP(inner_agent, outer_agent,
-#                                             env, batch_size, T, device)
-#         inner_running_reward = torch.Tensor([0]) + running_rewards[0, 0]
-#         inner_running_reward.backward(retain_graph=True)
-#         outer_running_reward += running_rewards[0, 1]
-#         last_outer_reward = torch.Tensor([0]) + running_rewards[0, 1]
-#         # Update inner agent
-#         inner_agent.update()
-#     # Print results
-#     print('outer iteration ', outer_it)
-#     print(inner_running_reward.item(), last_outer_reward.item(),
-#           last_actions.detach().numpy())
-#     outer_agent.update()

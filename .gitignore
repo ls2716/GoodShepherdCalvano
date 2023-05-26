@@ -1,5 +1,13 @@
 Code/venv
-
+.vscode
 *.png
 Code/__pycache__
+__pycache__
 *.pyc
+*.png
+*.pth
+*.log
+archive/
+*images/
+models
+logs

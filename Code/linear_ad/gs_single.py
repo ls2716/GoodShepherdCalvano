@@ -17,14 +17,15 @@ print(f'Device is {device}')
 if __name__=="__main__":
     # Define agents
     dummy_price = 1.5
-    agent1 = CalvanoAgent(0.01, device, 0.995)
+    agent1 = CalvanoAgent(0.01, 0.99, device)
     agent2 = DummyAgent(dummy_price, device)
+    # Define environment
     env = CalvanoTorch(np.array([1., 1.]), 1, 1., np.array([0., 0.]), device)
 
     # Define learning hyperparameters
     T = 6
-    batch_size = 30
-    learning_steps = 300
+    batch_size = 32
+    learning_steps = 500
 
     # Run learning
     for i in range(learning_steps):
