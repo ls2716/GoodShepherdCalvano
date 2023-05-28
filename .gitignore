@@ -1,4 +1,3 @@
-Code/venv
 .vscode
 *.png
 Code/__pycache__
@@ -11,3 +10,4 @@ archive/
 *images/
 models
 logs
+venv
