@@ -1,6 +1,7 @@
 """Check training simple Monte-Carlo agent
 with the Calvano environment and a dummy agent with gradient estimation.
 """
+import global_config
 
 from gsdis import DummyAgent, MDP, CalvanoDiscreteGEAgent, CalvanoDiscreteTorch
 import matplotlib.pyplot as plt
@@ -8,13 +9,18 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from tqdm import tqdm
-
+import psutil
+import os
+import time
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Device is {device}')
 
 
 if __name__ == "__main__":
+    # pid = os.getpid()
+    # p = psutil.Process(pid)
+    # p.cpu_affinity([0])
     device = 'cpu'
     possible_actions = [0.5, 1., 1.5]
     no_actions = len(possible_actions)
@@ -29,10 +35,11 @@ if __name__ == "__main__":
 
     # Define learning hyperparameters
     T = 1
-    learning_steps = 100
+    learning_steps = 1000
     scale = 0.05
 
     # Run learning
+    start_time = time.time()
     for i in tqdm(range(learning_steps)):
         running_rewards = MDP(
             agent1, agent2, env, T, device, 0)
@@ -53,6 +60,8 @@ if __name__ == "__main__":
         agent1.calculate_gradients(rewards)
         # print(agent1.gradients)
         agent1.update()
+    elapsed_time = time.time() - start_time
+    print("Elapsed time", elapsed_time)
 
     print('Agent 1 probabilities')
     agent1.regenerate_models()

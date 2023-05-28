@@ -1,6 +1,7 @@
 """Check training simple Monte-Carlo agent
 with the Calvano environment and a dummy agent with gradient estimation.
 """
+import global_config
 
 from gsdis import DummyAgent, MDP, CalvanoDiscreteGEAgent, CalvanoDiscreteTorch
 import matplotlib.pyplot as plt
