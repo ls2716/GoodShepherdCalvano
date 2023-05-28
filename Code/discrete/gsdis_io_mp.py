@@ -238,7 +238,7 @@ if __name__ == "__main__":
         signal = out_queues[i].get()
         logging.debug(f'Process {i} signal {signal}')
 
-    logging.debug("Running outer learning")
+    logging.info("Running outer learning")
     # Outer loop
     start_time = time.time()
     for outer_it in tqdm(range(outer_learning_steps)):
@@ -248,7 +248,7 @@ if __name__ == "__main__":
             inner_learning_steps=inner_learning_steps,
             env=env, T=T, no_actions=no_actions, device=device)
         base_reward = outer_reward
-        logging.debug(
+        logging.info(
             f'\n Outer reward is {base_reward}, inner reward is {inner_reward}')
 
         outer_agent.generate_perturbation(ge_scale)
@@ -280,7 +280,7 @@ if __name__ == "__main__":
     end_time = time.time()
 
     # Stopping processes
-    logging.debug("Stopping processes")
+    logging.info("Stopping processes")
     for i in range(num_processes):
         parameters = None
         in_queues[i].put(parameters)
@@ -300,6 +300,7 @@ if __name__ == "__main__":
     logging.info('Outer player strategy')
     logging.info(f'\n {outer_agent.compute_probabilities(model_index=0)}')
 
-    logging.info(f"Time elapsed {end_time-start_time}")
+    elapsed_time = end_time-start_time
+    logging.info(f"Time elapsed {elapsed_time:.4} s")
 
     q_listener.stop()

@@ -68,11 +68,6 @@ def func(new_parameters):
     logging.debug('Got new parameters')
     worker_outer_agent.models[0][:] = new_parameters[:]
 
-    pid = os.getpid()
-    p = psutil.Process(pid)
-    # p.cpu_affinity([0])
-    print('cpu affinity', pid, p.cpu_affinity(), flush=True)
-
     outer_reward, inner_reward = inner_loop(
         outer_agent=worker_outer_agent, model_index=0,
         inner_learning_steps=inner_learning_steps,
@@ -235,7 +230,7 @@ if __name__ == "__main__":
         params = list(range(num_processes))
         pool.apply(dummy_task)
 
-        logging.debug("Running outer learning")
+        logging.info("Running outer learning")
         # Outer loop
         start_time = time.time()
         for outer_it in tqdm(range(outer_learning_steps)):
@@ -245,7 +240,7 @@ if __name__ == "__main__":
                 inner_learning_steps=inner_learning_steps,
                 env=env, T=T, no_actions=no_actions, device=device)
             base_reward = outer_reward
-            logging.debug(
+            logging.info(
                 f'\n Outer reward is {base_reward}, inner reward is {inner_reward}')
 
             outer_agent.generate_perturbation(ge_scale)
@@ -274,7 +269,7 @@ if __name__ == "__main__":
         end_time = time.time()
 
         # Stopping processes
-        logging.debug("Stopping processes")
+        logging.info("Stopping processes")
         pool.close()
         pool.join()
 
@@ -290,6 +285,7 @@ if __name__ == "__main__":
     logging.info('Outer player strategy')
     logging.info(f'\n {outer_agent.compute_probabilities(model_index=0)}')
 
-    logging.info(f"Time elapsed {end_time-start_time}")
+    elapsed_time = end_time-start_time
+    logging.info(f"Time elapsed {elapsed_time:.4} s")
 
     q_listener.stop()
