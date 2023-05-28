@@ -20,6 +20,9 @@ import psutil
 import logging
 from logging.handlers import QueueHandler, QueueListener
 
+# Set sharing strategy for torch
+torch.multiprocessing.set_sharing_strategy('file_system')
+
 
 def process_func(qin, qout, qlog):
     device = 'cpu'
@@ -44,6 +47,7 @@ def process_func(qin, qout, qlog):
 
     logging.info(f'Started process - setup PID {os.getpid()}')
     logging.info(f'Arguments {arguments}')
+    logging.debug(f"Core affinity set to {core}")
 
     logging.debug(f'Finished setup')
     qout.put(0)

@@ -23,7 +23,7 @@ import logging
 from logging.handlers import QueueHandler, QueueListener
 
 
-def worker_init(qlog, env, outer_agent, arguments):
+def worker_init(qlog, env, outer_agent, arguments, cores):
 
     logging_level = arguments.get("logging_level", logging.INFO)
 
@@ -35,8 +35,11 @@ def worker_init(qlog, env, outer_agent, arguments):
     worker_outer_agent = deepcopy(outer_agent)
     inner_learning_steps = arguments["inner_learning_steps"]
     T = arguments["T"]
+    pid = os.getpid()
+    psutil_process = psutil.Process(pid)
+    mp_process_index = mp.Process()._identity[0]-1
 
-    no_actions = outer_agent.no_actions
+    psutil_process.cpu_affinity([cores[mp_process_index]])
 
     qh = QueueHandler(qlog)
     logger = logging.getLogger()
@@ -45,15 +48,9 @@ def worker_init(qlog, env, outer_agent, arguments):
 
     logging.info(f'Started process - setup PID {os.getpid()}')
     logging.info(f'Arguments {arguments}')
+    logging.debug(f"Core affinity set to {cores[mp_process_index]}")
 
     logging.debug(f'Finished setup')
-
-
-def set_core(core):
-    pid = os.getpid()
-    p = psutil.Process(pid)
-    p.cpu_affinity([core])
-    logging.debug(f'Core set to {core}')
 
 
 def dummy_task():
@@ -70,6 +67,11 @@ def func(new_parameters):
 
     logging.debug('Got new parameters')
     worker_outer_agent.models[0][:] = new_parameters[:]
+
+    pid = os.getpid()
+    p = psutil.Process(pid)
+    # p.cpu_affinity([0])
+    print('cpu affinity', pid, p.cpu_affinity(), flush=True)
 
     outer_reward, inner_reward = inner_loop(
         outer_agent=worker_outer_agent, model_index=0,
@@ -143,7 +145,7 @@ if __name__ == "__main__":
     mp.set_start_method('spawn')
     # Setup logger
     root_logging_level = logging.DEBUG
-    process_logging_level = logging.INFO
+    process_logging_level = logging.DEBUG
 
     q_listener, qlog = logger_init(
         root_logging_level)
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     logging.info(f'Device is {device}')
 
     # MP parameters
-    num_processes = 8
+    num_processes = 4
     # Cores for processes
     cores = list(range(num_processes))
     # Add check for cores
@@ -227,14 +229,11 @@ if __name__ == "__main__":
     }
 
     with mp.Pool(num_processes, initializer=worker_init,
-                 initargs=[qlog, env, outer_agent, arguments]) as pool:
+                 initargs=[qlog, env, outer_agent, arguments, cores]) as pool:
 
         # Startup the processes
         params = list(range(num_processes))
         pool.apply(dummy_task)
-
-        # Set cores for processes
-        pool.map(set_core, cores)
 
         logging.debug("Running outer learning")
         # Outer loop
