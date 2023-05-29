@@ -178,7 +178,7 @@ if __name__ == "__main__":
 
     # Game setup
     # Defining number of steps of environment
-    T = 10
+    T = 5
     # Learning length parameters
     inner_learning_steps = 300
     outer_learning_steps = 1
