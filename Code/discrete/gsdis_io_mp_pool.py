@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
     # Initialize outer agent
     outer_agent = CalvanoDiscreteGEAgent(
-        lr=0.2, no_actions=no_actions,
+        lr=ge_lr, no_actions=no_actions,
         no_models=ge_no_models, device=device)
 
     # (optional) Load the model
@@ -265,6 +265,7 @@ if __name__ == "__main__":
             else:
                 outer_agent.calculate_gradients(rewards)
                 outer_agent.update()
+            outer_agent.normalize_parameters()
 
         end_time = time.time()
 

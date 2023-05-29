@@ -84,11 +84,15 @@ def simulate_learning(outer_agent, env, T, possible_actions, device):
 
 if __name__ == "__main__":
     possible_actions = [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+    possible_actions = [0.5, 0.75, 1.]
+    possible_actions = [0.5,  0.7,  0.9, 1.1]  # 4 actions
+    possible_actions = [1.5,  2.0,  2.5, 3.]  # 4 actions Calvano
+    possible_actions = [1.5,  2.0, 2.25, 2.5, 2.75, 3.]  # 6 actions Calvano
     no_actions = len(possible_actions)
     # We start with defining two agents
     outer_agent = CalvanoDiscreteGEAgent(
         0.2,  no_actions=no_actions, no_models=10, device=device)
-    outer_model_path = 'models/outer_6_actions.pth'
+    outer_model_path = 'models/outer_6_actions_Calvano.pth'
 
     # Load the model
     outer_agent.parameters = torch.load(outer_model_path)
@@ -112,9 +116,9 @@ if __name__ == "__main__":
 
     # Define environment
     env = CalvanoDiscreteTorch(
-        np.array([1., 1.]), 0.2, 1., np.array([0., 0.]), possible_actions, device)
+        np.array([2., 2.]), 0.25, 0., np.array([1., 1.]), possible_actions, device)
 
-    T = 5
+    T = 20
 
     if True:
         # Simulate a game (no randomness)
@@ -139,6 +143,7 @@ if __name__ == "__main__":
         plt.close()
 
     if True:
+        T = 5
         # outer_agent = DummyAgent(2, no_actions, device)
         rewards_learning, actions_learning = simulate_learning(
             outer_agent, env, T, possible_actions, device)

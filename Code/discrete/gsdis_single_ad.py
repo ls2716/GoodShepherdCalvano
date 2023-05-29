@@ -18,18 +18,19 @@ print(f'Device is {device}')
 if __name__ == "__main__":
     device = 'cpu'
     possible_actions = [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+    possible_actions = [3.]  # 4 actions
     no_actions = len(possible_actions)
     # Define agents
     agent1 = CalvanoDiscreteADAgent(10., no_actions, device)
-    dummy_action = 5
+    dummy_action = 0
     agent2 = DummyAgent(dummy_action, no_actions, device)
     # Define environment
-    env = CalvanoDiscreteTorch(np.array([1., 1.]), 0.1, 0., np.array(
-        [0., 0.]), possible_actions, device=device)
+    env = CalvanoDiscreteTorch(np.array([2., 2.]), 0.25, 0., np.array(
+        [1., 1.]), possible_actions, device=device)
 
     # Define learning hyperparameters
     T = 1
-    learning_steps = 200
+    learning_steps = 300
 
     # Run learning
     for i in tqdm(range(learning_steps)):
@@ -60,6 +61,18 @@ if __name__ == "__main__":
     plt.title('rewards for each action')
     plt.grid()
     plt.savefig(f'images/rewards_dummy_{dummy_price}.png', dpi=300)
+    plt.close()
+
+    print('Best monopolistic price', actions[np.argmax(
+        rewards[:, 0].detach().cpu().numpy().flatten()+rewards[:, 1].detach().cpu().numpy().flatten())])
+
+    plt.plot(actions.detach().cpu().numpy().flatten(),
+             rewards[:, 0].detach().cpu().numpy().flatten()+rewards[:, 1].detach().cpu().numpy().flatten())
+    plt.xlabel('actions')
+    plt.ylabel('rewards')
+    plt.title('rewards for each action')
+    plt.grid()
+    plt.savefig(f'images/mon_rewards_dummy_{dummy_price}.png', dpi=300)
     plt.close()
 
     # # Get sample actions

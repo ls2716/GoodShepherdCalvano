@@ -23,6 +23,7 @@ if __name__ == "__main__":
     # p.cpu_affinity([0])
     device = 'cpu'
     possible_actions = [0.5, 1., 1.5]
+    
     no_actions = len(possible_actions)
     # Define agents
     no_models = 20
