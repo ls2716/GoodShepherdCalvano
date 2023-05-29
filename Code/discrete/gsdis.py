@@ -135,8 +135,9 @@ class CalvanoDiscreteGEAgent(object):
         return self.compute_probabilities(model_index=model_index)
 
     def normalize_parameters(self, norm_scale=1):
+        print(torch.norm(self.parameters, 1, dim=1, keepdim=True))
         self.parameters = self.parameters / \
-            torch.norm(self.parameters, 1, dim=1)*self.no_actions
+            torch.norm(self.parameters, 1, dim=1, keepdim=True)*self.no_actions
 
     def zero_gradients(self):
         self.gradients *= 0

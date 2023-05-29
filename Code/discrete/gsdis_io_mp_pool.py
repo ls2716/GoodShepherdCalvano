@@ -140,7 +140,7 @@ if __name__ == "__main__":
     mp.set_start_method('spawn')
     # Setup logger
     root_logging_level = logging.DEBUG
-    process_logging_level = logging.DEBUG
+    process_logging_level = logging.INFO
 
     q_listener, qlog = logger_init(
         root_logging_level)
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     logging.info(f'Device is {device}')
 
     # MP parameters
-    num_processes = 8
+    num_processes = 4
     # Cores for processes
     cores = list(range(num_processes))
     # Add check for cores
@@ -180,13 +180,13 @@ if __name__ == "__main__":
     # Defining number of steps of environment
     T = 5
     # Learning length parameters
-    inner_learning_steps = 300
+    inner_learning_steps = 200
     outer_learning_steps = 1
 
     # Number of models for GE agent
-    ge_no_models = 24
+    ge_no_models = 12
     # Define scale for perturbation
-    ge_scale = 0.03
+    ge_scale = 0.3
 
     # Define method for learning ('gradient' or 'best')
     ge_learning_method = 'best'
@@ -283,6 +283,9 @@ if __name__ == "__main__":
     # Save outer model
     torch.save(outer_agent.parameters, outer_model_path)
 
+    # Printing parameters
+    logging.info('Outer player parameters')
+    logging.info(f'\n {outer_agent.parameters}')
     # Printing strategy
     logging.info('Outer player strategy')
     logging.info(f'\n {outer_agent.compute_probabilities(model_index=0)}')
