@@ -153,7 +153,7 @@ if __name__ == "__main__":
     logging.info(f'Device is {device}')
 
     # MP parameters
-    num_processes = 4
+    num_processes = 8
     # Cores for processes
     cores = list(range(num_processes))
     # Add check for cores
@@ -163,23 +163,24 @@ if __name__ == "__main__":
     # Defining actions
     # possible_actions = [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
     possible_actions = [0.5, 0.75, 1.]
+    possible_actions = [1.5,  2.25, 3.]  # 3 actions Calvano
     no_actions = len(possible_actions)
 
     # Market parameters
     # Quality indices
-    A = np.array([1., 1.])
+    A = np.array([2., 2.])
     # Substitution index
-    mu = 0.2
+    mu = 0.25
     # Inverse aggregate demand
-    a_0 = 1.
+    a_0 = 0.
     # Costs
-    C = np.array([0., 0.])
+    C = np.array([1., 1.])
 
     # Game setup
     # Defining number of steps of environment
-    T = 5
+    T = 10
     # Learning length parameters
-    inner_learning_steps = 200
+    inner_learning_steps = 300
     outer_learning_steps = 1
 
     # Number of models for GE agent
@@ -192,7 +193,7 @@ if __name__ == "__main__":
     # Define learning rate if gradient (set to any value otherwise)
     ge_lr = 0.2
     # Define path for saving the outer ge model
-    outer_model_path = 'models/outer_3_actions.pth'
+    outer_model_path = 'models/outer_3_actions_Calvano.pth'
     # Define whether to load the model
     load_model = False
 
