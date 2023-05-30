@@ -1,0 +1,10 @@
+seed: 0
+possible_actions: [1.5, 1.8, 2.1, 2.4, 2.7, 3.]
+num_processes: 16
+T: 10
+inner_learning_steps: 400
+inner_lr: 20.
+outer_learning_steps: 150
+ge_no_models: 48
+ge_scale: 0.2
+norm_scale: 1.

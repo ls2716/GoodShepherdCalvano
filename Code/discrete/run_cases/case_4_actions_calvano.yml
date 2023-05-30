@@ -4,7 +4,7 @@ num_processes: 16
 T: 10
 inner_learning_steps: 300
 inner_lr: 20.
-outer_learning_steps: 75
+outer_learning_steps: 100
 ge_no_models: 32
-ge_scale: 0.3
+ge_scale: 0.25
 norm_scale: 1.
