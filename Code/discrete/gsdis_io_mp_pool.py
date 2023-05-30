@@ -157,7 +157,7 @@ if __name__ == "__main__":
     # Setup spawn method
     mp.set_start_method('spawn')
     # Setup logger
-    root_logging_level = logging.DEBUG
+    root_logging_level = logging.INFO
     process_logging_level = logging.INFO
 
     q_listener, qlog = logger_init(
