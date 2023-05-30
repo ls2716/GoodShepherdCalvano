@@ -16,6 +16,7 @@ import yaml
 import multiprocessing as mp
 import os
 import sys
+import json
 from copy import deepcopy
 import time
 from datetime import datetime
@@ -168,7 +169,7 @@ if __name__ == "__main__":
     # Read configuration
     with open(f'run_cases/case_{case_name}.yml', 'r') as file:
         case_args = yaml.safe_load(file)
-    logging.info(f'Configuration \n {case_args}')
+    logging.info(f'Configuration \n {json.dumps(case_args, indent=4)}')
 
     # Setup device
     device = torch.device('cpu')
