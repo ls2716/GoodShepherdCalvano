@@ -11,9 +11,11 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from tqdm import tqdm
+import yaml
 
 import multiprocessing as mp
 import os
+import sys
 from copy import deepcopy
 import time
 from datetime import datetime
@@ -23,7 +25,10 @@ import logging
 from logging.handlers import QueueHandler, QueueListener
 
 
-def worker_init(qlog, env, outer_agent, arguments, cores):
+case_name = '3_actions_calvano'
+
+
+def worker_init(qlog, env, outer_agent, arguments, cores):\
 
     logging_level = arguments.get("logging_level", logging.INFO)
 
@@ -31,10 +36,16 @@ def worker_init(qlog, env, outer_agent, arguments, cores):
     global worker_outer_agent
     global inner_learning_steps
     global T
+    global inner_lr
+    global case_name
     worker_env = deepcopy(env)
     worker_outer_agent = deepcopy(outer_agent)
     inner_learning_steps = arguments["inner_learning_steps"]
     T = arguments["T"]
+    inner_lr = arguments['inner_lr']
+    case_name = arguments['case_name']
+    torch.manual_seed(arguments['seed'])
+
     pid = os.getpid()
     psutil_process = psutil.Process(pid)
     mp_process_index = mp.Process()._identity[0]-1
@@ -61,6 +72,8 @@ def func(new_parameters):
     global worker_env
     global worker_outer_agent
     global inner_learning_steps
+    global inner_lr
+    global case_name
     global T
     device = 'cpu'
     no_actions = worker_outer_agent.no_actions
@@ -70,7 +83,7 @@ def func(new_parameters):
 
     outer_reward, inner_reward = inner_loop(
         outer_agent=worker_outer_agent, model_index=0,
-        inner_learning_steps=inner_learning_steps,
+        inner_learning_steps=inner_learning_steps, inner_lr=inner_lr, case_name=case_name,
         env=worker_env, device=device, T=T, no_actions=no_actions)
     logging.debug('Finished')
 
@@ -79,11 +92,11 @@ def func(new_parameters):
     return (outer_reward, inner_reward)
 
 
-def inner_loop(outer_agent, model_index, inner_learning_steps, env, device, T, no_actions, save_model=False):
+def inner_loop(outer_agent, model_index, inner_learning_steps, inner_lr, env, device, T, no_actions, case_name, save_model=False):
     """Define reward of inner loop"""
     outer_running_reward = torch.Tensor([0])
     inner_agent = CalvanoDiscreteADAgent(
-        lr=10., no_actions=no_actions, device=device)
+        lr=inner_lr, no_actions=no_actions, device=device)
     for inner_it in range(inner_learning_steps):
         inner_agent.zero_gradients()
         # Get rewards
@@ -100,12 +113,12 @@ def inner_loop(outer_agent, model_index, inner_learning_steps, env, device, T, n
     outer_reward = outer_running_reward.detach().cpu().flatten()[0]
     inner_reward = inner_running_reward.detach().cpu().flatten()[0]
     if save_model:
-        inner_model_path = 'models/inner.pth'
+        inner_model_path = f'models/inner_{case_name}.pth'
         torch.save(inner_agent.parameters, inner_model_path)
     return outer_reward, inner_reward
 
 
-def logger_init(level=logging.INFO):
+def logger_init(level=logging.INFO, case_name=''):
     q = mp.Queue()
     # this is the handler for all log records
     handler = logging.StreamHandler()
@@ -117,7 +130,7 @@ def logger_init(level=logging.INFO):
     # For timestamping
     # timestamp = datetime.now().strftime('%Y-%m-%d_%H%M%S')
     # filename = f'logs/gsde_io_mp_{timestamp}.log'
-    filename = 'logs/gsde_io_mp_pool.log'
+    filename = f'logs/gsde_io_mp_pool_{case_name}.log'
     fh = logging.FileHandler(filename, mode='w+')
     fh.setFormatter(logging.Formatter(
         "%(levelname)s: %(asctime)s - %(process)s - %(message)s"))
@@ -136,6 +149,10 @@ def logger_init(level=logging.INFO):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        raise ValueError("case name argument was not supplied")
+    case_name = sys.argv[1]
+
     # Setup spawn method
     mp.set_start_method('spawn')
     # Setup logger
@@ -143,17 +160,24 @@ if __name__ == "__main__":
     process_logging_level = logging.INFO
 
     q_listener, qlog = logger_init(
-        root_logging_level)
+        root_logging_level, case_name=case_name)
     logging.info('Initialized main thread')
+    logging.info(f'Case name {case_name}')
 
     # Parameter setup
+    # Read configuration
+    with open(f'run_cases/case_{case_name}.yml', 'r') as file:
+        case_args = yaml.safe_load(file)
+    logging.info(f'Configuration \n {case_args}')
 
     # Setup device
     device = torch.device('cpu')
     logging.info(f'Device is {device}')
 
+    torch.manual_seed(case_args['seed'])
+
     # MP parameters
-    num_processes = 4
+    num_processes = case_args['num_processes']
     # Cores for processes
     cores = list(range(num_processes))
     # Add check for cores
@@ -161,9 +185,7 @@ if __name__ == "__main__":
     # Environment setup
 
     # Defining actions
-    # possible_actions = [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-    possible_actions = [0.5, 0.75, 1.]
-    possible_actions = [1.5,  2.25, 3.]  # 3 actions Calvano
+    possible_actions = case_args['possible_actions']
     no_actions = len(possible_actions)
 
     # Market parameters
@@ -178,22 +200,25 @@ if __name__ == "__main__":
 
     # Game setup
     # Defining number of steps of environment
-    T = 5
+    T = case_args['T']
     # Learning length parameters
-    inner_learning_steps = 200
-    outer_learning_steps = 1
+    inner_learning_steps = case_args['inner_learning_steps']
+    inner_lr = case_args['inner_lr']
+
+    outer_learning_steps = case_args['outer_learning_steps']
+    norm_scale = case_args['norm_scale']
 
     # Number of models for GE agent
-    ge_no_models = 12
+    ge_no_models = case_args['ge_no_models']
     # Define scale for perturbation
-    ge_scale = 0.3
+    ge_scale = case_args['ge_scale']
 
     # Define method for learning ('gradient' or 'best')
     ge_learning_method = 'best'
     # Define learning rate if gradient (set to any value otherwise)
-    ge_lr = 0.2
+    ge_lr = None
     # Define path for saving the outer ge model
-    outer_model_path = 'models/outer_3_actions_Calvano.pth'
+    outer_model_path = f'models/outer_{case_name}.pth'
     # Define whether to load the model
     load_model = False
 
@@ -220,8 +245,11 @@ if __name__ == "__main__":
 
     arguments = {
         "inner_learning_steps": inner_learning_steps,
+        'inner_lr': inner_lr,
         "T": T,
-        "logging_level": process_logging_level
+        "logging_level": process_logging_level,
+        'seed': case_args['seed'],
+        'case_name': case_name
     }
 
     with mp.Pool(num_processes, initializer=worker_init,
@@ -238,8 +266,8 @@ if __name__ == "__main__":
             outer_agent.regenerate_models()
             outer_reward, inner_reward = inner_loop(
                 outer_agent, model_index=0,
-                inner_learning_steps=inner_learning_steps,
-                env=env, T=T, no_actions=no_actions, device=device)
+                inner_learning_steps=inner_learning_steps, inner_lr=inner_lr,
+                env=env, T=T, no_actions=no_actions, case_name=case_name, device=device)
             base_reward = outer_reward
             logging.info(
                 f'\n Outer reward is {base_reward}, inner reward is {inner_reward}')
@@ -266,7 +294,7 @@ if __name__ == "__main__":
             else:
                 outer_agent.calculate_gradients(rewards)
                 outer_agent.update()
-            outer_agent.normalize_parameters()
+            outer_agent.normalize_parameters(norm_scale=1.)
 
         end_time = time.time()
 
@@ -278,8 +306,8 @@ if __name__ == "__main__":
     outer_agent.regenerate_models()
     outer_reward, inner_reward = inner_loop(
         outer_agent, model_index=0,
-        inner_learning_steps=inner_learning_steps,
-        env=env, T=T, no_actions=no_actions, device=device, save_model=True)
+        inner_learning_steps=inner_learning_steps, inner_lr=inner_lr,
+        env=env, T=T, no_actions=no_actions, device=device, case_name=case_name, save_model=True)
     # Save outer model
     torch.save(outer_agent.parameters, outer_model_path)
 

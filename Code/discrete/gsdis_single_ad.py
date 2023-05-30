@@ -19,9 +19,13 @@ if __name__ == "__main__":
     device = 'cpu'
     possible_actions = [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
     possible_actions = [3.]  # 4 actions
+
+    possible_actions = [1.5,  1.8, 2.1, 2.4, 2.7, 3.]  # 6 actions Calvano
+    # possible_actions = [1.5,  2.0,  2.5, 3.]  # 4 actions Calvano
+    # possible_actions = [1.5,  2.25, 3.]  # 3 actions Calvano
     no_actions = len(possible_actions)
     # Define agents
-    agent1 = CalvanoDiscreteADAgent(10., no_actions, device)
+    agent1 = CalvanoDiscreteADAgent(20., no_actions, device)
     dummy_action = 0
     agent2 = DummyAgent(dummy_action, no_actions, device)
     # Define environment
@@ -30,7 +34,7 @@ if __name__ == "__main__":
 
     # Define learning hyperparameters
     T = 1
-    learning_steps = 300
+    learning_steps = 400
 
     # Run learning
     for i in tqdm(range(learning_steps)):

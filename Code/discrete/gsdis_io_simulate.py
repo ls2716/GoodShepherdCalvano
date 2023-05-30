@@ -4,6 +4,7 @@ with the Calvano environment and gradient estimation.
 
 from gsdis import CalvanoDiscreteGEAgent, CalvanoDiscreteADAgent, CalvanoDiscreteTorch, DummyAgent, MDP
 import matplotlib.pyplot as plt
+import shutil
 
 import torch
 import numpy as np
@@ -12,6 +13,8 @@ from tqdm import tqdm
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Device is {device}')
+
+plt.rcParams.update({'font.size': 12})
 
 
 def game(agent1, agent2, env, possible_actions, T, device):
@@ -58,7 +61,7 @@ def simulate_learning(outer_agent, env, T, possible_actions, device):
     inner_learning_steps = 400
     rewards_learning = np.zeros(shape=(inner_learning_steps, T, 2))
     actions_learning = np.zeros(shape=(inner_learning_steps, T, 2))
-    inner_agent = CalvanoDiscreteADAgent(10., no_actions, device)
+    inner_agent = CalvanoDiscreteADAgent(20., no_actions, device)
 
     for inner_it in tqdm(range(inner_learning_steps)):
         # Run game and get outputs
@@ -88,26 +91,26 @@ if __name__ == "__main__":
     possible_actions = [0.5,  0.7,  0.9, 1.1]  # 4 actions
     possible_actions = [1.5,  2.0,  2.5, 3.]  # 4 actions Calvano
     possible_actions = [1.5,  2.0, 2.25, 2.5, 2.75, 3.]  # 6 actions Calvano
+    possible_actions = [1.5,  2.25, 3.]  # 3 actions Calvano
+    possible_actions = [1.5,  2.0,  2.5, 3.]  # 4 actions Calvano
+    possible_actions = [1.5,  2.0, 2.25, 2.5, 2.75, 3.]  # 6 actions Calvano
+
     no_actions = len(possible_actions)
     # We start with defining two agents
     outer_agent = CalvanoDiscreteGEAgent(
         0.2,  no_actions=no_actions, no_models=10, device=device)
-    outer_model_path = 'models/outer_6_actions_Calvano.pth'
+
+    name = '6_actions_Calvano_v2_s0'
+    outer_model_path = f'models/outer_{name}.pth'
+    inner_model_path = f'models/inner_{name}.pth'
 
     # Load the model
     outer_agent.parameters = torch.load(outer_model_path)
 
-    # print(outer_agent.parameters)
-    # outer_agent.parameters[8, 1] = 10.
-    # outer_agent.parameters[8, 2] = 0.
-    # outer_agent.parameters[5, 1] = 10.
-    # outer_agent.parameters[5, 2] = 0.
-    # exit(0)
     outer_agent.regenerate_models()
     print(outer_agent.get_probabilities(0))
 
     inner_agent = CalvanoDiscreteADAgent(0.02, no_actions, device)
-    inner_model_path = 'models/inner.pth'
     # Load the model
     inner_agent.parameters = torch.load(inner_model_path)
 
@@ -121,48 +124,55 @@ if __name__ == "__main__":
     T = 20
 
     if True:
-        # Simulate a game (no randomness)
-        rewards_history, actions_history = game(
-            agent1=outer_agent, agent2=inner_agent, env=env, possible_actions=possible_actions, T=T, device=device)
-        fig, axs = plt.subplots(2, 1, figsize=(14, 10))
-        axs[0].plot(rewards_history[:, 0], label='outer rewards')
-        axs[0].plot(rewards_history[:, 1], label='inner rewards')
-        axs[0].set_xlabel('time step')
-        axs[0].grid()
-        axs[0].set_title('Rewards')
-        axs[0].legend()
-
-        axs[1].plot(actions_history[:, 0], label='outer actions')
-        axs[1].plot(actions_history[:, 1], label='inner actions')
-        axs[1].set_xlabel('time step')
-        axs[1].grid()
-        axs[1].set_title('Actions')
-        axs[1].legend()
-        plt.savefig('game_inner_outer.png')
-        # plt.show()
-        plt.close()
-
-    if True:
-        T = 5
-        # outer_agent = DummyAgent(2, no_actions, device)
-        rewards_learning, actions_learning = simulate_learning(
-            outer_agent, env, T, possible_actions, device)
-        steps_to_plot = list(range(0, 400, 2))
-        for i, step in enumerate(steps_to_plot):
-            fig, axs = plt.subplots(2, 1, figsize=(10, 9))
-            axs[0].plot(rewards_learning[step, :, 0], label='outer rewards')
-            axs[0].plot(rewards_learning[step, :, 1], label='inner rewards')
+        no_games = 3
+        for game_it in range(no_games):
+            # Simulate a game (no randomness)
+            rewards_history, actions_history = game(
+                agent1=outer_agent, agent2=inner_agent, env=env, possible_actions=possible_actions, T=T, device=device)
+            fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+            axs[0].plot(rewards_history[:, 0], label='outer rewards')
+            axs[0].plot(rewards_history[:, 1], label='inner rewards')
             # axs[0].set_xlabel('time step')
             axs[0].grid()
             axs[0].set_title('Rewards')
             axs[0].legend()
 
-            axs[1].plot(actions_learning[step, :, 0], label='outer actions')
-            axs[1].plot(actions_learning[step, :, 1], label='inner actions')
+            axs[1].plot(actions_history[:, 0], label='outer actions')
+            axs[1].plot(actions_history[:, 1], label='inner actions')
             axs[1].set_xlabel('time step')
             axs[1].grid()
             axs[1].set_title('Actions')
             axs[1].legend()
-            plt.savefig(f'learning_images/learning_step_{step}.png')
+            plt.savefig(f'game_inner_outer_{name}_{game_it+1}.png')
             # plt.show()
             plt.close()
+
+    if True:
+        T = 10
+        # outer_agent = DummyAgent(2, no_actions, device)
+        rewards_learning, actions_learning = simulate_learning(
+            outer_agent, env, T, possible_actions, device)
+        # Try to remove the tree; if it fails, throw an error using try...except.
+        try:
+            shutil.rmtree('learning_images')
+        except OSError as e:
+            print("Error: %s - %s." % (e.filename, e.strerror))
+        # steps_to_plot = list(range(0, 400, 40))
+        # for i, step in enumerate(steps_to_plot):
+        #     fig, axs = plt.subplots(2, 1, figsize=(10, 9))
+        #     axs[0].plot(rewards_learning[step, :, 0], label='outer rewards')
+        #     axs[0].plot(rewards_learning[step, :, 1], label='inner rewards')
+        #     # axs[0].set_xlabel('time step')
+        #     axs[0].grid()
+        #     axs[0].set_title('Rewards')
+        #     axs[0].legend()
+
+        #     axs[1].plot(actions_learning[step, :, 0], label='outer actions')
+        #     axs[1].plot(actions_learning[step, :, 1], label='inner actions')
+        #     axs[1].set_xlabel('time step')
+        #     axs[1].grid()
+        #     axs[1].set_title('Actions')
+        #     axs[1].legend()
+        #     plt.savefig(f'learning_images/learning_step_{step}.png')
+        #     # plt.show()
+        #     plt.close()

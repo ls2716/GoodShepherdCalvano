@@ -9,7 +9,6 @@ import torch
 import matplotlib.pyplot as plt
 from copy import deepcopy
 
-# Implement agents
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -134,10 +133,13 @@ class CalvanoDiscreteGEAgent(object):
     def get_probabilities(self, model_index):
         return self.compute_probabilities(model_index=model_index)
 
-    def normalize_parameters(self, norm_scale=1):
-        print(torch.norm(self.parameters, 1, dim=1, keepdim=True))
+    def normalize_parameters(self, norm_scale=1.):
+        print(self.parameters)
+        print(torch.norm(self.parameters, 1, dim=1, keepdim=True)/self.no_actions)
         self.parameters = self.parameters / \
-            torch.norm(self.parameters, 1, dim=1, keepdim=True)*self.no_actions
+            torch.norm(self.parameters, 1, dim=1, keepdim=True) * \
+            self.no_actions*norm_scale
+        print(self.parameters)
 
     def zero_gradients(self):
         self.gradients *= 0
