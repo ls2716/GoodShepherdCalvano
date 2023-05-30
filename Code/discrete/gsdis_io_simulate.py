@@ -9,7 +9,9 @@ import shutil
 import torch
 import numpy as np
 from tqdm import tqdm
-
+import sys
+import yaml
+import json
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Device is {device}')
@@ -86,23 +88,20 @@ def simulate_learning(outer_agent, env, T, possible_actions, device):
 
 
 if __name__ == "__main__":
-    possible_actions = [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-    possible_actions = [0.5, 0.75, 1.]
-    possible_actions = [0.5,  0.7,  0.9, 1.1]  # 4 actions
-    possible_actions = [1.5,  2.0,  2.5, 3.]  # 4 actions Calvano
-    possible_actions = [1.5,  2.0, 2.25, 2.5, 2.75, 3.]  # 6 actions Calvano
-    possible_actions = [1.5,  2.25, 3.]  # 3 actions Calvano
-    possible_actions = [1.5,  2.0,  2.5, 3.]  # 4 actions Calvano
-    possible_actions = [1.5,  2.0, 2.25, 2.5, 2.75, 3.]  # 6 actions Calvano
+    case_name = sys.argv[1]
+    with open(f'run_cases/case_{case_name}.yml', 'r') as file:
+        case_args = yaml.safe_load(file)
+    print(f'Configuration \n {json.dumps(case_args, indent=4)}')
+
+    possible_actions = case_args['possible_actions']
 
     no_actions = len(possible_actions)
     # We start with defining two agents
     outer_agent = CalvanoDiscreteGEAgent(
         0.2,  no_actions=no_actions, no_models=10, device=device)
 
-    name = '6_actions_Calvano_v2_s0'
-    outer_model_path = f'models/outer_{name}.pth'
-    inner_model_path = f'models/inner_{name}.pth'
+    outer_model_path = f'models/outer_{case_name}.pth'
+    inner_model_path = f'models/inner_{case_name}.pth'
 
     # Load the model
     outer_agent.parameters = torch.load(outer_model_path)
@@ -143,7 +142,7 @@ if __name__ == "__main__":
             axs[1].grid()
             axs[1].set_title('Actions')
             axs[1].legend()
-            plt.savefig(f'game_inner_outer_{name}_{game_it+1}.png')
+            plt.savefig(f'game_inner_outer_{case_name}_{game_it+1}.png')
             # plt.show()
             plt.close()
 
